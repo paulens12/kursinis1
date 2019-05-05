@@ -8,9 +8,9 @@
 #include <chrono>
 #include <ppl.h>
 
-#define W 3600
+#define W 360
 #define H 1500
-#define HMult 1200
+#define HMult 12000
 
 using namespace std;
 

@@ -8,10 +8,10 @@
 #include <chrono>
 #include <ppl.h>
 
-#define W 3600
+#define W 360
 #define H 1500
-#define HMult 1200
-#define THREADS 6
+#define HMult 12000
+#define THREADS 4
 //THREADS turi dalinti W
 
 using namespace std;
@@ -38,7 +38,12 @@ int main()
 	atomic<int> done = 0;
 
 	bool cont[THREADS];
+	mutex locks[THREADS];
+	condition_variable cvs[THREADS];
 	std::fill(cont, cont + THREADS, true);
+
+	memcpy(tempU[0], matrixU[0], W * sizeof(double));
+	memcpy(tempV[0], matrixV[0], W * sizeof(double));
 
 	int width = W / THREADS;
 	concurrency::parallel_for(0, THREADS, [&](int thn)
@@ -46,8 +51,8 @@ int main()
 		int rangeBegin = thn * width;
 		for (int i = 0; i < H - 1; i++)
 		{
-			memcpy(tempU[0] + rangeBegin, matrixU[i] + rangeBegin, width * sizeof(double));
-			memcpy(tempV[0] + rangeBegin, matrixV[i] + rangeBegin, width * sizeof(double));
+			//memcpy(tempU[0] + rangeBegin, matrixU[i] + rangeBegin, width * sizeof(double));
+			//memcpy(tempV[0] + rangeBegin, matrixV[i] + rangeBegin, width * sizeof(double));
 			for (int ii = 0; ii < HMult; ii++)
 			{
 				while (!cont[thn]) { }
@@ -79,12 +84,31 @@ int main()
 					memcpy(tempV[0], tempV[1], W * sizeof(double));
 					done = 0;
 					for (int k = 0; k < THREADS; k++)
+					{
 						cont[k] = true;
+						//unique_lock<mutex> l(locks[k]);
+						//cont[k] = true;
+						//cvs[k].notify_one();
+					}
+					if (ii == HMult - 1)
+					{
+						memcpy(matrixU[i + 1], tempU[0], W * sizeof(double));
+						memcpy(matrixV[i + 1], tempV[0], W * sizeof(double));
+					}
 				}
+				//unique_lock<mutex> l(locks[thn]);
+					//while (!cont[thn])
+					//	cvs[thn].wait(l);
+				//if(!cont[thn])
+				//	cvs[thn].wait(l, [&] {return cont[thn]; });
+				//cont[thn] = false;
 			}
 
-			memcpy(matrixU[i + 1] + rangeBegin, tempU[0] + rangeBegin, width * sizeof(double));
-			memcpy(matrixV[i + 1] + rangeBegin, tempV[0] + rangeBegin, width * sizeof(double));
+			//if(i%100 == 0)
+			//	cout << i << endl;
+
+			//memcpy(matrixU[i + 1] + rangeBegin, tempU[0] + rangeBegin, width * sizeof(double));
+			//memcpy(matrixV[i + 1] + rangeBegin, tempV[0] + rangeBegin, width * sizeof(double));
 		}
 	});
 
