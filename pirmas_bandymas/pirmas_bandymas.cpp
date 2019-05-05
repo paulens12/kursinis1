@@ -8,9 +8,9 @@
 #include <chrono>
 #include <ppl.h>
 
-#define W 360
+#define W 3600
 #define H 1500
-#define HMult 12000
+#define HMult 1200
 
 using namespace std;
 
@@ -27,7 +27,7 @@ int main()
 {
 	auto seed = chrono::system_clock::now().time_since_epoch().count();
 	normal_distribution<double> distr(0, 0.1);
-	default_random_engine re(seed);
+	default_random_engine re(1);
 	for (int i = 0; i < W; i++)
 	{
 		matrixU[i][0] = distr(re) + 1.0;
@@ -59,6 +59,28 @@ int main()
 				matrixV[W - 1][i],
 				matrixV[1][i]
 			);
+			
+			/*
+			concurrency::parallel_for(1, W - 1, [&](int j)
+			{
+				rowU[j] = getNextU(
+					matrixU[j][i],
+					matrixU[j - 1][i],
+					matrixU[j + 1][i],
+					matrixV[j][i],
+					matrixV[j - 1][i],
+					matrixV[j + 1][i]
+				);
+				rowV[j] = getNextV(
+					matrixU[j][i],
+					matrixU[j - 1][i],
+					matrixU[j + 1][i],
+					matrixV[j][i],
+					matrixV[j - 1][i],
+					matrixV[j + 1][i]
+				);
+			}, concurrency::simple_partitioner(W/3));
+			/*
 			concurrency::parallel_for(1, W - 1, [&](int j)
 			{
 				rowU[j] = getNextU(
@@ -78,10 +100,12 @@ int main()
 					matrixV[j + 1][i]
 				);
 			});
-			/*
+			*/
+			
+			
 			for (int j = 1; j < W - 1; j++)
 			{
-				matrixU[j][i] = getNextU(
+				rowU[j] = getNextU(
 					matrixU[j][i],
 					matrixU[j - 1][i],
 					matrixU[j + 1][i],
@@ -89,7 +113,7 @@ int main()
 					matrixV[j - 1][i],
 					matrixV[j + 1][i]
 				);
-				matrixV[j][i] = getNextV(
+				rowV[j] = getNextV(
 					matrixU[j][i],
 					matrixU[j - 1][i],
 					matrixU[j + 1][i],
@@ -98,7 +122,7 @@ int main()
 					matrixV[j + 1][i]
 				);
 			}
-			*/
+			
 			rowU[W - 1] = getNextU(
 				matrixU[W - 1][i],
 				matrixU[W - 2][i],
@@ -115,11 +139,21 @@ int main()
 				matrixV[W - 2][i],
 				matrixV[0][i]
 			);
+			
+			/*
 			concurrency::parallel_for (0, W, [&](int j)
 			{
 				matrixU[j][i] = rowU[j];
 				matrixV[j][i] = rowV[j];
 			});
+			*/
+			
+			for (int j = 0; j < W; j++)
+			{
+				matrixU[j][i] = rowU[j];
+				matrixV[j][i] = rowV[j];
+			}
+			
 		}
 	}
 	//auto height = H / HMult;
