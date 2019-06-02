@@ -38,8 +38,6 @@ int main()
 	atomic<int> done = 0;
 
 	bool cont[THREADS];
-	mutex locks[THREADS];
-	condition_variable cvs[THREADS];
 	std::fill(cont, cont + THREADS, true);
 
 	memcpy(tempU[0], matrixU[0], W * sizeof(double));
@@ -83,8 +81,6 @@ int main()
 				if (thn == 0)
 				{
 					while (done != THREADS) {}
-					//memcpy(tempU[0], tempU[1], W * sizeof(double));
-					//memcpy(tempV[0], tempV[1], W * sizeof(double));
 					done = 0;
 					if (ii == LMult)
 					{
@@ -94,24 +90,9 @@ int main()
 					for (int k = 0; k < THREADS; k++)
 					{
 						cont[k] = true;
-						//unique_lock<mutex> l(locks[k]);
-						//cont[k] = true;
-						//cvs[k].notify_one();
 					}
 				}
-				//unique_lock<mutex> l(locks[thn]);
-					//while (!cont[thn])
-					//	cvs[thn].wait(l);
-				//if(!cont[thn])
-				//	cvs[thn].wait(l, [&] {return cont[thn]; });
-				//cont[thn] = false;
 			}
-
-			//if(i%100 == 0)
-			//	cout << i << endl;
-
-			//memcpy(matrixU[i + 1] + rangeBegin, tempU[0] + rangeBegin, width * sizeof(double));
-			//memcpy(matrixV[i + 1] + rangeBegin, tempV[0] + rangeBegin, width * sizeof(double));
 		}
 	});
 
@@ -177,14 +158,3 @@ double getNextV(double prevU, double prevUL, double prevUR, double prevV, double
 		- prevV
 		) * dt + prevV;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
