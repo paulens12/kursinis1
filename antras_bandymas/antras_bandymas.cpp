@@ -10,8 +10,8 @@
 
 #define W 360
 #define H 1500
-#define HMult 12000
-#define THREADS 4
+#define LMult 1200
+#define THREADS 6
 //THREADS turi dalinti W
 
 using namespace std;
@@ -22,8 +22,8 @@ double getNextV(double prevU, double prevUL, double prevUR, double prevV, double
 double matrixU[H][W]; // [eilute][stulpelis]
 double matrixV[H][W]; // [eilute][stulpelis]
 
-double tempU[2][W];
-double tempV[2][W];
+double tempU[LMult+1][W];
+double tempV[LMult+1][W];
 
 int main()
 {
@@ -51,12 +51,15 @@ int main()
 		int rangeBegin = thn * width;
 		for (int i = 0; i < H - 1; i++)
 		{
-			//memcpy(tempU[0] + rangeBegin, matrixU[i] + rangeBegin, width * sizeof(double));
-			//memcpy(tempV[0] + rangeBegin, matrixV[i] + rangeBegin, width * sizeof(double));
-			for (int ii = 0; ii < HMult; ii++)
+			for (int ii = 1; ii <= LMult; ii++)
 			{
 				while (!cont[thn]) { }
 				cont[thn] = false;
+				if (ii == 1)
+				{
+					memcpy(tempU[0] + rangeBegin, matrixU[i] + rangeBegin, width * sizeof(double));
+					memcpy(tempV[0] + rangeBegin, matrixV[i] + rangeBegin, width * sizeof(double));
+				}
 				for (int j = rangeBegin; j < rangeBegin + width; j++)
 				{
 					int prev;
@@ -72,28 +75,28 @@ int main()
 					else
 						next = j + 1;
 
-					tempU[1][j] = getNextU(tempU[0][j], tempU[0][prev], tempU[0][next], tempV[0][j], tempV[0][prev], tempV[0][next]);
-					tempV[1][j] = getNextV(tempU[0][j], tempU[0][prev], tempU[0][next], tempV[0][j], tempV[0][prev], tempV[0][next]);
+					tempU[ii][j] = getNextU(tempU[ii - 1][j], tempU[ii - 1][prev], tempU[ii - 1][next], tempV[ii - 1][j], tempV[ii - 1][prev], tempV[ii - 1][next]);
+					tempV[ii][j] = getNextV(tempU[ii - 1][j], tempU[ii - 1][prev], tempU[ii - 1][next], tempV[ii - 1][j], tempV[ii - 1][prev], tempV[ii - 1][next]);
 				}
 				done++;
 
 				if (thn == 0)
 				{
 					while (done != THREADS) {}
-					memcpy(tempU[0], tempU[1], W * sizeof(double));
-					memcpy(tempV[0], tempV[1], W * sizeof(double));
+					//memcpy(tempU[0], tempU[1], W * sizeof(double));
+					//memcpy(tempV[0], tempV[1], W * sizeof(double));
 					done = 0;
+					if (ii == LMult)
+					{
+						memcpy(matrixU[i + 1], tempU[ii], W * sizeof(double));
+						memcpy(matrixV[i + 1], tempV[ii], W * sizeof(double));
+					}
 					for (int k = 0; k < THREADS; k++)
 					{
 						cont[k] = true;
 						//unique_lock<mutex> l(locks[k]);
 						//cont[k] = true;
 						//cvs[k].notify_one();
-					}
-					if (ii == HMult - 1)
-					{
-						memcpy(matrixU[i + 1], tempU[0], W * sizeof(double));
-						memcpy(matrixV[i + 1], tempV[0], W * sizeof(double));
 					}
 				}
 				//unique_lock<mutex> l(locks[thn]);
@@ -130,7 +133,7 @@ int main()
 	double multiU = 255 / maxU;
 	double multiV = 255 / maxV;
 
-	for (int i = 1; i < H; i++)
+	for (int i = 1; i <= H; i++)
 	{
 		for (int j = 0; j < W; j++)
 		{
@@ -140,8 +143,8 @@ int main()
 			imgV[H - i][j] = png::rgb_pixel(color, color, color);
 		}
 	}
-	imgU.write("U.png");
-	imgV.write("V.png");
+	imgU.write("U2.png");
+	imgV.write("V2.png");
 	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV;
 }
 
