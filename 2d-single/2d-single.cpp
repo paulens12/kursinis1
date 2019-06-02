@@ -11,17 +11,18 @@
 #define W 280
 #define H 100
 #define L 1500
-#define HMult 1200
+#define LMult 1200
 
 using namespace std;
 
-double getNextU(double u, double ul, double ur, double uu, double ud, double v, double vl, double vr, double vu, double vd);
-double getNextV(double u, double ul, double ur, double uu, double ud, double v, double vl, double vr, double vu, double vd);
+inline double getNextU(double u, double ul, double ur, double uu, double ud, double v, double vl, double vr, double vu, double vd);
+inline double getNextV(double u, double v, double vl, double vr, double vu, double vd);
 
-double matrixU[W][H]; // [stulpelis][eilute]
-double matrixV[W][H]; // [stulpelis][eilute]
-double rowU[W];
-double rowV[W];
+double matrixU[L][H][W]; // [kadras][eilute][stulpelis]
+double matrixV[L][H][W]; // [kadras][eilute][stulpelis]
+
+double tempU[LMult + 1][H][W];
+double tempV[LMult + 1][H][W];
 
 int main()
 {
@@ -30,79 +31,58 @@ int main()
 	default_random_engine re(1);
 	for (int i = 0; i < W; i++)
 	{
-		matrixU[i][0] = distr(re) + 1.0;
-		matrixV[i][0] = 0;
+		for(int j = 0; j < H; j++)
+		{
+			matrixU[0][i][j] = distr(re) + 1.0;
+			matrixV[0][i][j] = 0;
+		}
 	}
 	
-	for (int i = 1; i < H; i++)
+	memcpy(tempU[0], matrixU[0], W * H * sizeof(double));
+	memcpy(tempV[0], matrixV[0], W * H * sizeof(double));
+
+	for (int i = 0; i < L - 1; i++)
 	{
-		for (int j = 0; j < W; j++)
+		for (int ii = 1; ii <= LMult; ii++)
 		{
-			matrixU[j][i] = matrixU[j][i - 1];
-			matrixV[j][i] = matrixV[j][i - 1];
-		}
-		for (int k = 0; k < HMult; k++)
-		{
-			rowU[0] = getNextU(
-				matrixU[0][i],
-				matrixU[W - 1][i],
-				matrixU[1][i],
-				matrixV[0][i],
-				matrixV[W - 1][i],
-				matrixV[1][i]
-			);
-			rowV[0] = getNextV(
-				matrixU[0][i],
-				matrixU[W - 1][i],
-				matrixU[1][i],
-				matrixV[0][i],
-				matrixV[W - 1][i],
-				matrixV[1][i]
-			);
-			
-			for (int j = 1; j < W - 1; j++)
+			if (ii == 1)
 			{
-				rowU[j] = getNextU(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-				rowV[j] = getNextV(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
+				memcpy(tempU[0], matrixU[i], W * H * sizeof(double));
+				memcpy(tempV[0], matrixV[i], W * H * sizeof(double));
 			}
-			
-			rowU[W - 1] = getNextU(
-				matrixU[W - 1][i],
-				matrixU[W - 2][i],
-				matrixU[0][i],
-				matrixV[W - 1][i],
-				matrixV[W - 2][i],
-				matrixV[0][i]
-			);
-			rowV[W - 1] = getNextV(
-				matrixU[W - 1][i],
-				matrixU[W - 2][i],
-				matrixU[0][i],
-				matrixV[W - 1][i],
-				matrixV[W - 2][i],
-				matrixV[0][i]
-			);
-			
 			for (int j = 0; j < W; j++)
 			{
-				matrixU[j][i] = rowU[j];
-				matrixV[j][i] = rowV[j];
+				for (int k = 0; k < H; k++)
+				{
+					int l, r, u, d;
+
+					if (j == 0)
+						l = W - 1;
+					else
+						l = j - 1;
+					if (j == W - 1)
+						r = 0;
+					else
+						r = j + 1;
+					if (k == 0)
+						d = H - 1;
+					else
+						d = k - 1;
+					if (k == H - 1)
+						u = 0;
+					else
+						u = k + 1;
+
+					tempU[ii][k][j] = getNextU(tempU[ii - 1][k][j], tempU[ii - 1][k][l], tempU[ii - 1][k][r], tempU[ii - 1][u][j], tempU[ii - 1][d][j], tempV[ii - 1][k][j], tempV[ii - 1][k][l], tempV[ii - 1][k][r], tempV[ii - 1][u][j], tempV[ii - 1][d][j]);
+					tempV[ii][k][j] = getNextV(tempU[ii - 1][k][j], tempV[ii - 1][k][j], tempV[ii - 1][k][l], tempV[ii - 1][k][r], tempV[ii - 1][u][j], tempV[ii - 1][d][j]);
+				}
 			}
-			
+
+			if (ii == LMult)
+			{
+				memcpy(matrixU[i + 1], tempU[ii], W * H * sizeof(double));
+				memcpy(matrixV[i + 1], tempV[ii], W * H * sizeof(double));
+			}
 		}
 	}
 	png::image<png::rgb_pixel> imgU(W, H);
@@ -110,18 +90,36 @@ int main()
 
 	double maxU = 0;
 	double maxV = 0;
-	for (int i = 0; i < W; i++)
+	for (int k = 0; k < L; k++)
 	{
-		for (int j = 0; j < H; j++)
+		for (int i = 0; i < H; i++)
 		{
-			if (matrixU[i][j] > maxU)
-				maxU = matrixU[i][j];
-			if (matrixV[i][j] > maxV)
-				maxV = matrixV[i][j];
+			for (int j = 0; j < W; j++)
+			{
+				if (matrixU[k][i][j] > maxU)
+					maxU = matrixU[k][i][j];
+				if (matrixV[k][i][j] > maxV)
+					maxV = matrixV[k][i][j];
+			}
 		}
 	}
+		
 	double multiU = 255 / maxU;
 	double multiV = 255 / maxV;
+
+	uint8_t frameU[W * H * 4];
+	uint8_t frameV[W * H * 4];
+
+	for (int k = 0; k < L; k++)
+	{
+		for (int i = 0; i < H; i++)
+		{
+			for (int j = 1; j <= W; j++)
+			{
+
+			}
+		}
+	}
 	for (int i = 0; i < W; i++)
 	{
 		for (int j = 1; j <= H; j++)
@@ -145,7 +143,7 @@ double dx2 = 0.075*0.075;
 double dy2 = 0.075*0.075;
 double dt = 0.00005;
 
-double getNextU(double u, double ul, double ur, double uu, double ud, double v, double vl, double vr, double vu, double vd)
+inline double getNextU(double u, double ul, double ur, double uu, double ud, double v, double vl, double vr, double vu, double vd)
 {
 	double ul2 = (u + ul) / 2;
 	double ur2 = (u + ur) / 2;
@@ -165,7 +163,7 @@ double getNextU(double u, double ul, double ur, double uu, double ud, double v, 
 		) + u;
 }
 
-double getNextV(double u, double ul, double ur, double uu, double ud, double v, double vl, double vr, double vu, double vd)
+inline double getNextV(double u, double v, double vl, double vr, double vu, double vd)
 {
 	return dt * (
 		(vr - 2 * v + vl) / dx2
@@ -175,28 +173,6 @@ double getNextV(double u, double ul, double ur, double uu, double ud, double v, 
 		) + v;
 }
 
-double getNextU(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
-{
-	double prevUL2 = (prevU + prevUL) / 2;
-	double prevUR2 = (prevU + prevUR) / 2;
-	return	(
-				(prevUR - 2 * prevU + prevUL) * Du / dx2
-				- (
-					prevUR2 * (prevVR - prevV)
-					- prevUL2 * (prevV - prevVL)
-				) * chi / dx2
-				+ au * prevU * (1 - prevU)
-			) * dt + prevU;
-}
-
-double getNextV(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
-{
-	return	(
-				(prevVR - 2 * prevV + prevVL) / dx2
-				+ prevU / (1 + Bv * prevU)
-				- prevV
-			) * dt + prevV;
-}
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu

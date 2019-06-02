@@ -10,7 +10,7 @@
 
 #define W 360
 #define H 1500
-#define HMult 1200
+#define LMult 1200
 
 using namespace std;
 
@@ -41,7 +41,7 @@ int main()
 			matrixU[j][i] = matrixU[j][i - 1];
 			matrixV[j][i] = matrixV[j][i - 1];
 		}
-		for (int k = 0; k < HMult; k++)
+		for (int k = 0; k < LMult; k++)
 		{
 			rowU[0] = getNextU(
 				matrixU[0][i],
@@ -59,49 +59,6 @@ int main()
 				matrixV[W - 1][i],
 				matrixV[1][i]
 			);
-			
-			/*
-			concurrency::parallel_for(1, W - 1, [&](int j)
-			{
-				rowU[j] = getNextU(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-				rowV[j] = getNextV(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-			}, concurrency::simple_partitioner(W/3));
-			/*
-			concurrency::parallel_for(1, W - 1, [&](int j)
-			{
-				rowU[j] = getNextU(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-				rowV[j] = getNextV(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-			});
-			*/
-			
 			
 			for (int j = 1; j < W - 1; j++)
 			{
@@ -139,14 +96,6 @@ int main()
 				matrixV[W - 2][i],
 				matrixV[0][i]
 			);
-			
-			/*
-			concurrency::parallel_for (0, W, [&](int j)
-			{
-				matrixU[j][i] = rowU[j];
-				matrixV[j][i] = rowV[j];
-			});
-			*/
 			
 			for (int j = 0; j < W; j++)
 			{
