@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{33996583-289C-4699-88D6-F9FCF1D77D5D}</ProjectGuid>
+    <ProjectGuid>{5D3E4EC1-EF48-4422-AB3A-DAA2995DF1A3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>2dsingle</RootNamespace>
+    <RootNamespace>2dmulti</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -170,7 +170,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="2d-single.cpp" />
+    <ClCompile Include="2d-multi.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

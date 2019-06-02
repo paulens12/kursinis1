@@ -35,8 +35,10 @@ int main()
 		matrixU[0][i] = distr(re) + 1.0;
 		matrixV[0][i] = 0;
 	}
-	atomic<int> done = 0;
 
+	if (W % THREADS != 0) cout << "DEMESIO!!! THREADS nedalija W!";
+
+	atomic<int> done = 0;
 	bool cont[THREADS];
 	std::fill(cont, cont + THREADS, true);
 
@@ -126,7 +128,7 @@ int main()
 	}
 	imgU.write("U2.png");
 	imgV.write("V2.png");
-	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV;
+	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV;
 }
 
 double Du = 0.1;

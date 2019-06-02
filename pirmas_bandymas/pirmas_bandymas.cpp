@@ -135,7 +135,7 @@ int main()
 	}
 	imgU.write("U1.png");
 	imgV.write("V1.png");
-	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV;
+	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV;
 }
 
 double GetPixelAt(int x, int y, double matrix[][H])
