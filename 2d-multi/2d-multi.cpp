@@ -11,7 +11,7 @@
 #define FRAME_DURATION 6
 #define W 360
 #define H 128
-#define L 1500
+#define L 600
 #define LMult 1200
 #define THREADS 6
 //THREADS turi dalinti W
@@ -51,7 +51,7 @@ int main()
 	memcpy(tempV[0], matrixV[0], W * H * sizeof(double));
 
 	int width = W / THREADS;
-
+	auto start = clock();
 	concurrency::parallel_for(0, THREADS, [&](int thn)
 	{
 		int rangeBegin = thn * width;
@@ -104,7 +104,8 @@ int main()
 					{
 						memcpy(matrixU[i + 1], tempU[ii], W * H * sizeof(double));
 						memcpy(matrixV[i + 1], tempV[ii], W * H * sizeof(double));
-						if (i % 10 == 0) cout << i << endl;
+						if (i % 10 == 0)
+							cout << i << endl;
 					}
 					for (int k = 0; k < THREADS; k++)
 						cont[k] = true;
@@ -112,7 +113,8 @@ int main()
 			}
 		}
 	});
-	
+	auto duration = (clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "duration: " << duration << endl;
 
 	double maxU = 0;
 	double maxV = 0;
@@ -130,6 +132,8 @@ int main()
 		}
 	}
 		
+	maxU = 3.5;
+	maxV = 0.7;
 	double multiU = 255 / maxU;
 	double multiV = 255 / maxV;
 
@@ -152,12 +156,14 @@ int main()
 		{
 			for (int j = 0; j < W; j++)
 			{
-				frameU[4 * (W * i + j)] = multiU * matrixU[k][i][j];
-				frameU[4 * (W * i + j)+1] = multiU * matrixU[k][i][j];
-				frameU[4 * (W * i + j)+2] = multiU * matrixU[k][i][j];
-				frameV[4 * (W * i + j)] = multiV * matrixV[k][i][j];
-				frameV[4 * (W * i + j) + 1] = multiV * matrixV[k][i][j];
-				frameV[4 * (W * i + j) + 2] = multiV * matrixV[k][i][j];
+				uint8_t colorU = min((int)(multiU * matrixU[k][i][j]), 255);
+				uint8_t colorV = min((int)(multiV * matrixV[k][i][j]), 255);
+				frameU[4 * (W * i + j)] = colorU;
+				frameU[4 * (W * i + j)+1] = colorU;
+				frameU[4 * (W * i + j)+2] = colorU;
+				frameV[4 * (W * i + j)] = colorV;
+				frameV[4 * (W * i + j) + 1] = colorV;
+				frameV[4 * (W * i + j) + 2] = colorV;
 			}
 		}
 		GifWriteFrame(&gu, frameU, W, H, FRAME_DURATION);

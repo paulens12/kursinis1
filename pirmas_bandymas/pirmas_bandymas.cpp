@@ -9,19 +9,18 @@
 #include <ppl.h>
 
 #define W 360
-#define H 1500
+#define H 600
 #define LMult 1200
 
 using namespace std;
 
 double getNextU(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR);
 double getNextV(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR);
-double GetPixelAt(int x, int y, double matrix[][H]);
 
-double matrixU[W][H]; // [stulpelis][eilute]
-double matrixV[W][H]; // [stulpelis][eilute]
-double rowU[W];
-double rowV[W];
+double matrixU[H][W]; // [eilute][stulpelis]
+double matrixV[H][W]; // [eilute][stulpelis]
+double tempU[LMult + 1][W];
+double tempV[LMult + 1][W];
 
 int main()
 {
@@ -30,90 +29,64 @@ int main()
 	default_random_engine re(1);
 	for (int i = 0; i < W; i++)
 	{
-		matrixU[i][0] = distr(re) + 1.0;
-		matrixV[i][0] = 0;
+		matrixU[0][i] = distr(re) + 1.0;
+		matrixV[0][i] = 0;
 	}
-	
-	for (int i = 1; i < H; i++)
+
+	auto start = clock();
+	for (int i = 1; i < H - 1; i++)
 	{
-		for (int j = 0; j < W; j++)
+		memcpy(tempU[0], matrixU[i], W * sizeof(double));
+		memcpy(tempV[0], matrixV[i], W * sizeof(double));
+		for (int k = 1; k <= LMult; k++)
 		{
-			matrixU[j][i] = matrixU[j][i - 1];
-			matrixV[j][i] = matrixV[j][i - 1];
-		}
-		for (int k = 0; k < LMult; k++)
-		{
-			rowU[0] = getNextU(
-				matrixU[0][i],
-				matrixU[W - 1][i],
-				matrixU[1][i],
-				matrixV[0][i],
-				matrixV[W - 1][i],
-				matrixV[1][i]
-			);
-			rowV[0] = getNextV(
-				matrixU[0][i],
-				matrixU[W - 1][i],
-				matrixU[1][i],
-				matrixV[0][i],
-				matrixV[W - 1][i],
-				matrixV[1][i]
-			);
-			
-			for (int j = 1; j < W - 1; j++)
-			{
-				rowU[j] = getNextU(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-				rowV[j] = getNextV(
-					matrixU[j][i],
-					matrixU[j - 1][i],
-					matrixU[j + 1][i],
-					matrixV[j][i],
-					matrixV[j - 1][i],
-					matrixV[j + 1][i]
-				);
-			}
-			
-			rowU[W - 1] = getNextU(
-				matrixU[W - 1][i],
-				matrixU[W - 2][i],
-				matrixU[0][i],
-				matrixV[W - 1][i],
-				matrixV[W - 2][i],
-				matrixV[0][i]
-			);
-			rowV[W - 1] = getNextV(
-				matrixU[W - 1][i],
-				matrixU[W - 2][i],
-				matrixU[0][i],
-				matrixV[W - 1][i],
-				matrixV[W - 2][i],
-				matrixV[0][i]
-			);
-			
 			for (int j = 0; j < W; j++)
 			{
-				matrixU[j][i] = rowU[j];
-				matrixV[j][i] = rowV[j];
+				int prev;
+
+				if (j == 0)
+					prev = W - 1;
+				else
+					prev = j - 1;
+
+				int next;
+				if (j == W - 1)
+					next = 0;
+				else
+					next = j + 1;
+
+				tempU[k][j] = getNextU(
+					tempU[k-1][j],
+					tempU[k-1][prev],
+					tempU[k-1][next],
+					tempV[k - 1][j],
+					tempV[k - 1][prev],
+					tempV[k - 1][next]
+				);
+				tempV[k][j] = getNextV(
+					tempU[k - 1][j],
+					tempU[k - 1][prev],
+					tempU[k - 1][next],
+					tempV[k - 1][j],
+					tempV[k - 1][prev],
+					tempV[k - 1][next]
+				);
 			}
-			
 		}
+		memcpy(matrixU[i + 1], tempU[LMult], W * sizeof(double));
+		memcpy(matrixV[i + 1], tempV[LMult], W * sizeof(double));
 	}
-	//auto height = H / HMult;
+	auto duration = (clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "duration: " << duration << endl;
+
 	png::image<png::rgb_pixel> imgU(W, H);
 	png::image<png::rgb_pixel> imgV(W, H);
 
 	double maxU = 0;
 	double maxV = 0;
-	for (int i = 0; i < W; i++)
+	for (int i = 0; i < H; i++)
 	{
-		for (int j = 0; j < H; j++)
+		for (int j = 0; j < W; j++)
 		{
 			if (matrixU[i][j] > maxU)
 				maxU = matrixU[i][j];
@@ -121,39 +94,25 @@ int main()
 				maxV = matrixV[i][j];
 		}
 	}
+	maxU = 3.5;
+	maxV = 0.7;
 	double multiU = 255 / maxU;
 	double multiV = 255 / maxV;
 	for (int i = 0; i < W; i++)
 	{
 		for (int j = 1; j <= H; j++)
 		{
-			int color = GetPixelAt(i, j - 1, matrixU) * multiU;
+			int color = min((int)(matrixU[j - 1][i] * multiU), 255);
 			imgU[H - j][i] = png::rgb_pixel(color, color, color);
-			color = GetPixelAt(i, j - 1, matrixV) * multiV;
+			color = min((int)(matrixV[j - 1][i] * multiV), 255);
 			imgV[H - j][i] = png::rgb_pixel(color, color, color);
 		}
 	}
 	imgU.write("U1.png");
 	imgV.write("V1.png");
-	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV;
+	//cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV;
 }
 
-double GetPixelAt(int x, int y, double matrix[][H])
-{
-	return matrix[x][y];
-}
-
-/*
-double GetPixelAt(int x, int y, double matrix[][H])
-{
-	double sum = 0;
-	for (int i = y; i < y + HMult; i++)
-	{
-		sum += matrix[x][i];
-	}
-	return sum / HMult;
-}
-*/
 double Du = 0.1;
 double chi = 8.3;
 double au = 1;
@@ -161,7 +120,7 @@ double Bv = 0.73;
 double dx2 = 0.075*0.075;
 double dt = 0.00005;
 
-double getNextU(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
+inline double getNextU(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
 {
 	double prevUL2 = (prevU + prevUL) / 2;
 	double prevUR2 = (prevU + prevUR) / 2;
@@ -175,7 +134,7 @@ double getNextU(double prevU, double prevUL, double prevUR, double prevV, double
 			) * dt + prevU;
 }
 
-double getNextV(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
+inline double getNextV(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
 {
 	return	(
 				(prevVR - 2 * prevV + prevVL) / dx2

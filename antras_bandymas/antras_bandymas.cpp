@@ -9,15 +9,15 @@
 #include <ppl.h>
 
 #define W 360
-#define H 1500
+#define H 600
 #define LMult 1200
-#define THREADS 6
+#define THREADS 4
 //THREADS turi dalinti W
 
 using namespace std;
 
 double getNextU(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR);
-double getNextV(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR);
+double getNextV(double prevU, double prevV, double prevVL, double prevVR);
 
 double matrixU[H][W]; // [eilute][stulpelis]
 double matrixV[H][W]; // [eilute][stulpelis]
@@ -46,6 +46,7 @@ int main()
 	memcpy(tempV[0], matrixV[0], W * sizeof(double));
 
 	int width = W / THREADS;
+	auto start = clock();
 	concurrency::parallel_for(0, THREADS, [&](int thn)
 	{
 		int rangeBegin = thn * width;
@@ -76,7 +77,7 @@ int main()
 						next = j + 1;
 
 					tempU[ii][j] = getNextU(tempU[ii - 1][j], tempU[ii - 1][prev], tempU[ii - 1][next], tempV[ii - 1][j], tempV[ii - 1][prev], tempV[ii - 1][next]);
-					tempV[ii][j] = getNextV(tempU[ii - 1][j], tempU[ii - 1][prev], tempU[ii - 1][next], tempV[ii - 1][j], tempV[ii - 1][prev], tempV[ii - 1][next]);
+					tempV[ii][j] = getNextV(tempU[ii - 1][j], tempV[ii - 1][j], tempV[ii - 1][prev], tempV[ii - 1][next]);
 				}
 				done++;
 
@@ -97,6 +98,8 @@ int main()
 			}
 		}
 	});
+	auto duration = (clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "duration: " << duration << endl;
 
 	png::image<png::rgb_pixel> imgU(W, H);
 	png::image<png::rgb_pixel> imgV(W, H);
@@ -113,6 +116,8 @@ int main()
 				maxV = matrixV[i][j];
 		}
 	}
+	maxU = 3.5;
+	maxV = 0.7;
 	double multiU = 255 / maxU;
 	double multiV = 255 / maxV;
 
@@ -120,15 +125,15 @@ int main()
 	{
 		for (int j = 0; j < W; j++)
 		{
-			int color = matrixU[i - 1][j] * multiU;
+			int color = min((int)(matrixU[i - 1][j] * multiU), 255);
 			imgU[H - i][j] = png::rgb_pixel(color, color, color);
-			color = matrixV[i - 1][j] * multiV;
+			color = min((int)(matrixV[i - 1][j] * multiV), 255);
 			imgV[H - i][j] = png::rgb_pixel(color, color, color);
 		}
 	}
 	imgU.write("U2.png");
 	imgV.write("V2.png");
-	cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV;
+	//cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV << endl;
 }
 
 double Du = 0.1;
@@ -152,7 +157,7 @@ double getNextU(double prevU, double prevUL, double prevUR, double prevV, double
 		) * dt + prevU;
 }
 
-double getNextV(double prevU, double prevUL, double prevUR, double prevV, double prevVL, double prevVR)
+double getNextV(double prevU, double prevV, double prevVL, double prevVR)
 {
 	return	(
 		(prevVR - 2 * prevV + prevVL) / dx2

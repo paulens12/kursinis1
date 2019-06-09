@@ -11,7 +11,7 @@
 #define FRAME_DURATION 6
 #define W 360
 #define H 128
-#define L 1500
+#define L 600
 #define LMult 1200
 
 using namespace std;
@@ -42,6 +42,7 @@ int main()
 	memcpy(tempU[0], matrixU[0], W * H * sizeof(double));
 	memcpy(tempV[0], matrixV[0], W * H * sizeof(double));
 
+	auto start = clock();
 	for (int i = 0; i < L - 1; i++)
 	{
 		for (int ii = 1; ii <= LMult; ii++)
@@ -91,6 +92,8 @@ int main()
 			}
 		}
 	}
+	auto duration = (clock() - start) / (double)CLOCKS_PER_SEC;
+	cout << "duration: " << duration << endl;
 
 	double maxU = 0;
 	double maxV = 0;
