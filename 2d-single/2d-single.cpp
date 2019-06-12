@@ -88,7 +88,7 @@ int main()
 			{
 				memcpy(matrixU[i + 1], tempU[ii], W * H * sizeof(double));
 				memcpy(matrixV[i + 1], tempV[ii], W * H * sizeof(double));
-				if(i % 10 == 0) cout << i << endl;
+				//if(i % 10 == 0) cout << i << endl;
 			}
 		}
 	}
@@ -110,7 +110,8 @@ int main()
 			}
 		}
 	}
-		
+	maxU = 3.5;
+	maxV = 0.7;
 	double multiU = 255 / maxU;
 	double multiV = 255 / maxV;
 
@@ -133,12 +134,14 @@ int main()
 		{
 			for (int j = 0; j < W; j++)
 			{
-				frameU[4 * (W * i + j)] = multiU * matrixU[k][i][j];
-				frameU[4 * (W * i + j) + 1] = multiU * matrixU[k][i][j];
-				frameU[4 * (W * i + j) + 2] = multiU * matrixU[k][i][j];
-				frameV[4 * (W * i + j)] = multiV * matrixV[k][i][j];
-				frameV[4 * (W * i + j) + 1] = multiV * matrixV[k][i][j];
-				frameV[4 * (W * i + j) + 2] = multiV * matrixV[k][i][j];
+				uint8_t colorU = min((int)(multiU * matrixU[k][i][j]), 255);
+				uint8_t colorV = min((int)(multiV * matrixV[k][i][j]), 255);
+				frameU[4 * (W * i + j)] = colorU;
+				frameU[4 * (W * i + j) + 1] = colorU;
+				frameU[4 * (W * i + j) + 2] = colorU;
+				frameV[4 * (W * i + j)] = colorV;
+				frameV[4 * (W * i + j) + 1] = colorV;
+				frameV[4 * (W * i + j) + 2] = colorV;
 			}
 		}
 		GifWriteFrame(&gu, frameU, W, H, FRAME_DURATION);

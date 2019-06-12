@@ -24,7 +24,6 @@ double tempV[LMult + 1][W];
 
 int main()
 {
-	auto seed = chrono::system_clock::now().time_since_epoch().count();
 	normal_distribution<double> distr(0, 0.1);
 	default_random_engine re(1);
 	for (int i = 0; i < W; i++)
@@ -34,7 +33,7 @@ int main()
 	}
 
 	auto start = clock();
-	for (int i = 1; i < H - 1; i++)
+	for (int i = 0; i < H - 1; i++)
 	{
 		memcpy(tempU[0], matrixU[i], W * sizeof(double));
 		memcpy(tempV[0], matrixV[i], W * sizeof(double));
