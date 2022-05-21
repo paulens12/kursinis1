@@ -8,17 +8,18 @@
 #include <chrono>
 #include <ppl.h>
 
-#define W 360
-#define H 960
-#define LMult 1200
-#define THREADS 3
+#define W 224
+#define H 601
+#define LMult 10000
+#define THREADS 4
 //THREADS turi dalinti W
 
 long double Du = 0.1;
 long double chi = 8.3;
 long double au = 1;
 long double Bv = 0.73;
-long double dx2 = 0.05*0.05;
+long double dx = (8.0 * 3.14159265358979323846) / W;
+long double dx2 = dx*dx;
 long double dt = 0.00005;
 
 int LMult2 = 1;
@@ -44,14 +45,14 @@ int main()
 		matrixV[0][i] = 0;
 	}
 
-	cout << "Iveskite Du: ";
-	cin >> Du;
-	cout << Du << endl << "Iveskite chi: ";
-	cin >> chi;
-	cout << chi << endl << "Iveskite daugikli: ";
-	cin >> LMult2;
-	cout << LMult2 << endl;
-	if (W % THREADS != 0) cout << "DEMESIO!!! THREADS nedalija W!";
+	//cout << "Iveskite Du: ";
+	//cin >> Du;
+	//cout << Du << endl << "Iveskite chi: ";
+	//cin >> chi;
+	//cout << chi << endl << "Iveskite daugikli: ";
+	//cin >> LMult2;
+	//cout << LMult2 << endl;
+	//if (W % THREADS != 0) cout << "DEMESIO!!! THREADS nedalija W!";
 
 	atomic<int> done = 0;
 	bool cont[THREADS];
@@ -139,8 +140,8 @@ int main()
 				maxV = matrixV[i][j];
 		}
 	}
-	maxU = 3.5;
-	maxV = 0.7;
+	maxU = 4.5;
+	maxV = 0.6;
 	long double multiU = 255 / maxU;
 	long double multiV = 255 / maxV;
 
@@ -155,7 +156,7 @@ int main()
 		}
 	}
 
-	string vars = "D" + to_string(Du) + "_chi" + to_string(chi) + "_M" + to_string(LMult2) + "dx0.05";
+	string vars = "D" + to_string(Du) + "_chi" + to_string(chi) + "_M" + to_string(LMult2);
 	imgU.write("U1_" + vars + ".png");
 	imgV.write("V1_" + vars + ".png");
 	//cout << "U multiplier: " << multiU << endl << "V multiplier: " << multiV << endl << "U max: " << maxU << endl << "V max: " << maxV << endl;

@@ -167,7 +167,7 @@ inline double getNextU(double u, double ul, double ur, double uu, double ud, dou
 	double uu2 = (u + uu) / 2;
 	double ud2 = (u + ud) / 2;
 
-	return dt * (
+	double result = dt * (
 			Du * (
 				(ur - 2 * u + ul) / dx2
 				+ (uu - 2 * u + ud) / dy2
@@ -178,16 +178,28 @@ inline double getNextU(double u, double ul, double ur, double uu, double ud, dou
 			)
 			+ au * u * (1 - u)
 		) + u;
+	if (!isfinite(result) || result < 0)
+	{
+		if (_fpclass(result) != _FPCLASS_NINF && _fpclass(result) != _FPCLASS_PINF)
+			cout << "error " << _fpclass(result) << endl;
+	}
+	return result;
 }
 
 inline double getNextV(double u, double v, double vl, double vr, double vu, double vd)
 {
-	return dt * (
+	double result = dt * (
 		(vr - 2 * v + vl) / dx2
 		+ (vu - 2 * v + vd) / dy2
 		+ u / (1 + Bv * u)
 		- v
 		) + v;
+	if (!isfinite(result) || result < 0)
+	{
+		if (_fpclass(result) != _FPCLASS_NINF && _fpclass(result) != _FPCLASS_PINF)
+			cout << "error " << _fpclass(result) << endl;
+	}
+	return result;
 }
 
 
